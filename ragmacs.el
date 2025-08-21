@@ -187,8 +187,24 @@ Returns the source code as a string, or nil if the definition is not found."
 
 ;; The tool definitions.  Each tool calls one of the functions above.
 
+(defun ragmacs-plist-delete (plist property)
+  "Delete PROPERTY from PLIST.
+This is in contrast to merely setting it to 0."
+  (let (p)
+    (while plist
+      (if (not (eq property (car plist)))
+	  (setq p (plist-put p (car plist) (nth 1 plist))))
+      (setq plist (cddr plist)))
+    p))
+
+(defun ragmacs-make-tool (&rest slots)
+  "Make tools for both `gptel' and `claude-code-ide' based on SLOTS."
+  (cons (apply #'gptel-make-tool slots)
+        (when (functionp 'claude-code-ide-make-tool)
+          (apply #'claude-code-ide-make-tool slots))))
+
 (defvar ragmacs-eval
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-eval
    :name "elisp_eval"
    :confirm t
@@ -219,7 +235,7 @@ demonstrate something to the user.")
   "Retreive evaluated result of arbitrary Elisp expression.")
 
 (defvar ragmacs-symbolp
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-symbolp
    :name "symbol_exists"
    :include t
@@ -235,7 +251,7 @@ extremely cheap to call.")
   "Retreive whether a symbol exists.")
 
 (defvar ragmacs-load-paths
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-load-paths
    :name "load_paths"
    :include t
@@ -250,7 +266,7 @@ Emacs installation.")
   "Retrieve load paths")
 
  (defvar ragmacs-features
-   (gptel-make-tool
+   (ragmacs-make-tool
     :function #'ragmacs--gptel-features
     :name "features"
     :include t
@@ -266,7 +282,7 @@ and load paths.")
    "Retreive a list of all loaded features.")
 
 (defvar ragmacs-manuals
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-manual-names
    :name "manual_names"
    :include t
@@ -289,7 +305,7 @@ used liberally.")
   "Retrieve the names of available manuals.")
 
 (defvar ragmacs-manual-nodes
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-manual-list-nodes
    :name "manual_nodes"
    :include t
@@ -319,7 +335,7 @@ in the Elisp manual.")
   "Retreieve a list of nodes from a manual.")
 
 (defvar ragmacs-manual-node-contents
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-manual-node-contents
    :name "manual_node_contents"
    :include t
@@ -357,7 +373,7 @@ style language anc content.")
   "Retrieve the contents of a node in a manual.")
 
 (defvar ragmacs-featurep
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-featurep
    :name "features"
    :include t
@@ -375,7 +391,7 @@ would obtain from MELPA and Non-GNU ELPA etc.")
   "Retreive if a feature is loaded.")
 
 (defvar ragmacs-library-source
-  (gptel-make-tool
+  (ragmacs-make-tool
    :function #'ragmacs--gptel-library-source
    :name "library_source"
    :include t
@@ -401,7 +417,7 @@ recursively look them up.")
   "Retreive the source for an entire library.")
 
 (defvar ragmacs-symbol-manual-node
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "symbol_manual_section"
    :include t
    :function #'ragmacs--gptel-symbol-in-manual
@@ -424,7 +440,7 @@ docstring next and finally try to complete the prefix of the symbol .")
   "Retrieve manual contents related to a symbol.")
 
 (defvar ragmacs-function-source
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "function_source"
    :include t
    :function #'ragmacs--gptel-function-source
@@ -453,7 +469,7 @@ using `library_source'.  This tool is cheap.  Use it liberally.")
   "Retrieve the source for a function.")
 
 (defvar ragmacs-variable-source
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "variable_source"
    :function #'ragmacs--gptel-variable-source
    :category "introspection"
@@ -476,17 +492,17 @@ library feature by using `library_source'.  This tool is cheap and fast.
 Call it liberally.")
   "Retreive the source for a variable.")
 
-(defvar ragmacs-variable-value (gptel-make-tool
-         :name "variable_value"
-         :function #'ragmacs--gptel-variable-global-value
-         :category "introspection"
-         :confirm t
-         :include t
-         :args '(( :name "variable"
-                   :type string
-                   :description "Name of a VARIABLE, such as \
+(defvar ragmacs-variable-value (ragmacs-make-tool
+                                :name "variable_value"
+                                :function #'ragmacs--gptel-variable-global-value
+                                :category "introspection"
+                                :confirm t
+                                :include t
+                                :args '(( :name "variable"
+                                          :type string
+                                          :description "Name of a VARIABLE, such as \
 \"last-kbd-macro\"."))
-         :description "Returns the global value for VARIABLE.
+                                :description "Returns the global value for VARIABLE.
 Return value is the global (not buffer-local) value for VARIABLE.
 VARIABLE can be a defvar or defcustom.  Use this when behavior depends
 on the state of a variable or you want to infer if a package has indeed
@@ -502,7 +518,7 @@ contained.")
   "Retrieve the value of a variable.")
 
 (defvar ragmacs-function-docstring
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "function_documentation"
    :function #'ragmacs--gptel-function-documentation
    :category "introspection"
@@ -519,7 +535,7 @@ This tool is very cheap and very fast.  Call it very liberally.")
   "Retrieve function documentation.")
 
 (defvar ragmacs-variable-docstring
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "variable_documentation"
    :function #'ragmacs--gptel-variable-documentation
    :category "introspection"
@@ -536,15 +552,15 @@ or leading the user through diagnosing something.  This tool is very
 cheap and very fast.  Call it very liberally.")
   "Retrieve variable documentation")
 
-(defvar ragmacs-function-completions (gptel-make-tool
-  :name "function_completions"
-  :function #'ragmacs--gptel-function-completions
-  :category "introspection"
-  :include t
-  :args '(( :name "function_prefix"
-            :type string
-            :description "FUNCTION_PREFIX of functions you are searching for."))
-  :description "Returns a list of functions beginning with FUNCTION_PREFIX.
+(defvar ragmacs-function-completions (ragmacs-make-tool
+                                      :name "function_completions"
+                                      :function #'ragmacs--gptel-function-completions
+                                      :category "introspection"
+                                      :include t
+                                      :args '(( :name "function_prefix"
+                                                :type string
+                                                :description "FUNCTION_PREFIX of functions you are searching for."))
+                                      :description "Returns a list of functions beginning with FUNCTION_PREFIX.
 Use this to prepare for subsequent calls to `function_source' or
 `function_documentation' to look up the source code or docstrings of
 multiple functions.  You can also use this tool to verify which
@@ -552,11 +568,11 @@ functions and macros can be called.  If you want to search for all
 functions defined in foo and its sub-packages, you this tool is a very
 good starting point.  This tool is very cheap and very fast.  Call it
 very liberally.")
- "Retrieve completions for a function prefix")
+  "Retrieve completions for a function prefix")
 
 
 (defvar ragmacs-command-completions
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "command_completions"
    :function #'ragmacs--gptel-command-completions
    :category "introspection"
@@ -574,15 +590,15 @@ and very fast.  Call it very liberally.")
   "Retrieve completions for a command prefix.")
 
 (defvar ragmacs-variable-completions
- (gptel-make-tool
-  :name "variable_completions"
-  :function #'ragmacs--gptel-variable-completions
-  :category "introspection"
-  :include t
-  :args '(( :name "variable_prefix"
-            :type string
-            :description "VARIABLE_PREFIX of variables you are searching for."))
-  :description "Returns a list of variables beginning with VARIABLE_PREFIX.
+  (ragmacs-make-tool
+   :name "variable_completions"
+   :function #'ragmacs--gptel-variable-completions
+   :category "introspection"
+   :include t
+   :args '(( :name "variable_prefix"
+             :type string
+             :description "VARIABLE_PREFIX of variables you are searching for."))
+   :description "Returns a list of variables beginning with VARIABLE_PREFIX.
 The variables returned include defvars and custom variables.  Defvars
 tell you what states a package relies on for its implementation.
 Defcustom tells you what configuration options the user should know
@@ -594,7 +610,7 @@ Use this to prepare for subsequent calls to `variable_source' or
 multiple variables.  If you want to search for all variables defined
 under a prefix, you this tool is a very good starting point.  This tool
 is very cheap and very fast.  Call it very liberally.")
- "Retreive completions for a variable.")
+  "Retreive completions for a variable.")
 
 ;; The Remaining tools below are only instructive to developing other tools.
 
@@ -614,7 +630,7 @@ enum: %S"
   (funcall callback (format "Do it %s." later-val)))
 
 (defvar ragmacs-simulate-error
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "simulate_error"
    :function #'ragmacs--gptel-simulate-error
    :category "testing"
@@ -626,7 +642,7 @@ absolutely use it.")
   "Test tool designed to demonstrate a tool call that errors.")
 
 (defvar ragmacs-coerce-nil
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "coerce_nil"
    :function #'ragmacs--gptel-coerce-nil
    :category "testing"
@@ -637,7 +653,7 @@ will coerce nils to something you can read or will error on my side.")
   "Test tool designed to test behavior of returning nil.")
 
 (defvar ragmacs-all-arg-types
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "all_arg_types"
    :function #'ragmacs--gptel-all-arg-types
    :category "testing"
@@ -657,7 +673,7 @@ will coerce nils to something you can read or will error on my side.")
   "Test tool that retrieves all argument types")
 
 (defvar ragmacs-async
-  (gptel-make-tool
+  (ragmacs-make-tool
    :name "async_tool"
    :function #'ragmacs--gptel-async-tool
    :category "testing"
