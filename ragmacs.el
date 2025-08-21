@@ -187,16 +187,6 @@ Returns the source code as a string, or nil if the definition is not found."
 
 ;; The tool definitions.  Each tool calls one of the functions above.
 
-(defun ragmacs-plist-delete (plist property)
-  "Delete PROPERTY from PLIST.
-This is in contrast to merely setting it to 0."
-  (let (p)
-    (while plist
-      (if (not (eq property (car plist)))
-	  (setq p (plist-put p (car plist) (nth 1 plist))))
-      (setq plist (cddr plist)))
-    p))
-
 (defun ragmacs-make-tool (&rest slots)
   "Make tools for both `gptel' and `claude-code-ide' based on SLOTS."
   (cons (apply #'gptel-make-tool slots)
